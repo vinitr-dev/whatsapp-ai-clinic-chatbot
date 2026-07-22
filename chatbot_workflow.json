@@ -1,0 +1,1667 @@
+{
+  "name": "Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recebendo-mensagem-whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        0
+      ],
+      "id": "9e9de5ac-e43a-4578-9380-c11a35e171e1",
+      "name": "Recebendo mensagens whatsapp",
+      "webhookId": "7bd2a4db-6e1f-4aaf-a232-8a1a3cef465f"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        144
+      ],
+      "id": "897ebde8-6ea7-4e19-a1d7-93d6b76ff3c7",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "sJk2In2mt2tzuNFS",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://147.15.81.192:8080/message/sendText/teste",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "1646Acac_2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.number }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4032,
+        -48
+      ],
+      "id": "8a48450c-5c2d-46a7-8c89-cfc27572a4fe",
+      "name": "enviando mensagem",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$json.telefone}}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        1744,
+        144
+      ],
+      "id": "03e262ac-5a93-40d9-9816-28a51fb412b4",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "nTmLUOjwXK6RMjrF",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body;\n\nconst remoteJid = body.data.key.remoteJid;\n\nconst telefone = remoteJid\n  .replace(\"@s.whatsapp.net\", \"\");\n\nconst mensagem =\n  body.data.message?.conversation ||\n  body.data.message?.extendedTextMessage?.text ||\n  \"\";\n\nreturn [\n  {\n    json: {\n      telefone,\n      mensagem,\n      nome: body.data.pushName,\n      messageId: body.data.key.id,\n      instancia: body.instance,\n      timestamp: body.date_time,\n      fromMe: body.data.key.fromMe,\n      startedAt: Date.now()\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "75ced787-9eea-4acb-8ac0-2f2a0bc39af5",
+      "name": "Normalize Evolution Payload"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recebendo mensagens whatsapp').item.json.body.data.message.conversation }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Você é Ana, assistente virtual da Clínica Sorriso.\n\nSeu objetivo é atender pacientes pelo WhatsApp de forma profissional, educada e objetiva.\n\nVocê NÃO agenda consultas.\n\nVocê apenas realiza a pré-triagem e coleta informações para que a equipe confirme posteriormente.\n\nSeu papel é funcionar como uma recepcionista humana.\n\n------------------------------------------------\n\nINFORMAÇÕES DA CLÍNICA\n\nHorário de atendimento\n\n• Segunda a sexta: 08:00 às 18:00\n\n• Sábado: 08:00 às 12:00\n\n• Domingo: fechado\n\nEspecialidades\n\n• Clínica Geral\n\n• Limpeza\n\n• Clareamento\n\n• Ortodontia\n\n• Implantes\n\n------------------------------------------------\n\nDADOS DO CLIENTE\n\nNome:\n{{$json.nome}}\n\nTelefone:\n{{$json.telefone}}\n\nEsses dados já foram identificados automaticamente.\n\nNunca solicite novamente o telefone.\n\nCaso o nome esteja vazio, pergunte apenas o nome.\n\n------------------------------------------------\n\nREGRAS IMPORTANTES\n\nNunca invente informações.\n\nNunca informe preços.\n\nNunca informe horários disponíveis.\n\nNunca confirme agendamentos.\n\nNunca diga que verificará a agenda.\n\nNunca diga que irá consultar o sistema.\n\nVocê não possui acesso à agenda.\n\nVocê apenas coleta informações.\n\nApós coletar tudo, informe que a equipe fará contato para confirmar.\n\n------------------------------------------------\n\nCOLETA OBRIGATÓRIA\n\nPara solicitar um agendamento você precisa obter:\n\n• procedimento\n\n• melhor dia\n\n• melhor horário\n\nFaça apenas UMA pergunta por mensagem.\n\nNunca faça duas perguntas ao mesmo tempo.\n\n------------------------------------------------\n\nHORÁRIOS\n\nSe o usuário solicitar\n\n20:00\n\n20:30\n\n21:00\n\nou qualquer horário fora do expediente,\n\nexplique educadamente que esse horário está fora do funcionamento da clínica e solicite outro horário.\n\nNunca aceite horários inválidos.\n\n------------------------------------------------\n\nMEMÓRIA\n\nCaso o usuário já tenha informado procedimento, data ou horário anteriormente,\n\nnão pergunte novamente.\n\nUse a memória da conversa.\n\n------------------------------------------------\n\nEMERGÊNCIA\n\nSe houver:\n\ndor intensa\n\nsangramento\n\nacidente\n\nurgência\n\noriente procurar atendimento imediatamente.\n\n------------------------------------------------\n\nESTILO\n\nRespostas curtas.\n\nMáximo 3 frases.\n\nMáximo 70 palavras.\n\nPortuguês brasileiro.\n\nTom profissional.\n\nNunca utilize linguagem robótica.\n\nNunca utilize listas quando não forem necessárias.\n\nNunca utilize mais de um emoji por mensagem.\n\n------------------------------------------------\n\nFINALIZAÇÃO\n\nQuando possuir\n\nNome\n\nTelefone\n\nProcedimento\n\nData desejada\n\nHorário desejado\n\nresponda apenas:\n\n\"Perfeito! Registrei sua solicitação e nossa equipe entrará em contato para confirmar o agendamento. Caso precise de mais alguma informação, estou à disposição.\"\n\nVocê deve preencher corretamente os campos definidos pelo Structured Output.\n\nNunca invente dados.\n\nCaso ainda falte alguma informação para o agendamento, deixe o campo vazio.\n\nA resposta enviada ao usuário deve estar apenas no campo \"response\".\n\nHistórico da conversa:\n\n{{$json.conversation_history}}\n\nUse esse histórico para evitar repetir perguntas já respondidas.\n\nAntes de responder, faça internamente:\n\n1. Identifique se existe uma data.\n2. Caso exista, converta para YYYY-MM-DD.\n3. Somente depois gere o JSON final.\n\nNunca exponha esse processo ao usuário.\n\nREGRAS DE RETORNO DO JSON\n\nO campo appointment.date NUNCA pode conter datas no formato brasileiro.\n\nSempre converta qualquer data informada pelo usuário para o padrão ISO 8601:\n\nYYYY-MM-DD\n\n\nExemplos:\n\nUsuário:\n\"Pode ser dia 23/07\"\n\nResposta JSON:\n\n{\n \"appointment\":{\n   \"date\":\"2026-07-23\"\n }\n}\n\n\nUsuário:\n\"25 de julho\"\n\nResposta JSON:\n\n{\n \"appointment\":{\n   \"date\":\"2026-07-25\"\n }\n}\n\n\nNunca retornar:\n\n23/07\n25/07\ndia 25\n25 de julho\n\nREGRAS DE AGENDAMENTO\n\nVocê nunca pode aceitar um horário fora do funcionamento da clínica.\n\nFuncionamento:\n\nSegunda a sexta:\n08:00 até 18:00\n\nSábado:\n08:00 até 12:00\n\nDomingo:\nFechado\n\nCaso o usuário informe horário inválido:\n\nNão registre no JSON como horário confirmado.\n\nRetorne:\n\nappointment.time = null"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1648,
+        -32
+      ],
+      "id": "7163329c-8aa2-4f59-b2ae-76babf515469",
+      "name": "Resposta gerada pela IA",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0db8829c-c2d2-493d-886a-55d8fcfd6b1d",
+              "name": "number",
+              "value": "={{ $('Normalize Evolution Payload').item.json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "5fe65750-c0be-444b-995b-9d4931ba0986",
+              "name": "text",
+              "value": "={{ $('Resposta gerada pela IA').item.json.output.response }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3568,
+        -48
+      ],
+      "id": "84892e7c-d20a-468d-b4b6-b278a53a28fe",
+      "name": "Preparar resposta Evolution"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefone": "={{ $('Normalize Evolution Payload').item.json.telefone }}",
+            "nome": "={{ $('Normalize Evolution Payload').item.json.nome }}",
+            "mensagem_usuario": "={{ $('Normalize Evolution Payload').item.json.mensagem }}",
+            "status": "received",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1088,
+        -32
+      ],
+      "id": "1404e48e-e837-438d-8a34-e27e6e6ca95c",
+      "name": "Salvar log de entrada",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id\nFROM chatbot_logs\nWHERE message_id = '{{$json.messageId}}'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "35bbc4a8-5b27-4d8b-b75d-4a09d10c4693",
+      "name": "Verifica se mensagem já existe",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "97d18d93-60e4-4166-8359-8dda052af738",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -16
+      ],
+      "id": "5f7734cb-ccd2-4851-9fec-61d271cc7b98",
+      "name": "Verificando se mensagem já foi enviada"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://147.15.81.192:8080/message/sendText/teste",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "1646Acac_2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Normalize Evolution Payload').item.json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "=Estou enfrentando uma instabilidade temporária. Tente novamente em alguns instantes."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2544,
+        128
+      ],
+      "id": "bfbe1720-8390-4937-b7ba-b84eb29da8bf",
+      "name": "Mensagem de erro ao gerar resposta da IA"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://147.15.81.192:8080/message/sendText/teste",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "1646Acac_2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Normalize Evolution Payload').item.json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "=Desculpe, não consegui compreender sua solicitação. Poderia reformular a mensagem?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3856,
+        128
+      ],
+      "id": "a05a1aae-d99d-484f-90ed-f0265daca107",
+      "name": "Mensagem de erro da resposta gerada pela IA"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "resposta_ia": "={{ $('Resposta gerada pela IA').item.json.output.response }}",
+            "status": "answer_ia_null",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}"
+          },
+          "matchingColumns": [
+            "message_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2784,
+        128
+      ],
+      "id": "0e1f79c5-5732-4260-9d74-2ffc8fe1b2d7",
+      "name": "Atualizar log status answer_ia_null",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "resposta_ia": "={{ $('Resposta gerada pela IA').item.json.output.response }}",
+            "modelo": "groq",
+            "status": "answered",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}",
+            "tempo_resposta_ms": "={{ $('Calcular tempo resposta').item.json.tempo_resposta_ms }}",
+            "intent": "={{$json.intent}}",
+            "procedure": "={{ $json.procedure }}",
+            "preferred_date": "={{$json.preferred_date}}",
+            "preferred_time": "={{$json.preferred_time}}"
+          },
+          "matchingColumns": [
+            "message_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tempo_resposta_ms",
+              "displayName": "tempo_resposta_ms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "procedure",
+              "displayName": "procedure",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preferred_date",
+              "displayName": "preferred_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preferred_time",
+              "displayName": "preferred_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "time",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3248,
+        -48
+      ],
+      "id": "cfe55c11-5dfe-4c9a-939c-993f51c80de3",
+      "name": "Atualizar log status answered",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "send_failed",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}",
+            "error_message": "={{$json.error.message}}"
+          },
+          "matchingColumns": [
+            "message_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4256,
+        112
+      ],
+      "id": "afa2f5c3-eec0-40ea-8d6e-9c1fe820e884",
+      "name": "Atualizar log status send_failed",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "success",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}"
+          },
+          "matchingColumns": [
+            "message_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4256,
+        -64
+      ],
+      "id": "3422f7db-381a-401f-ab30-94fb37508bef",
+      "name": "Atualizar log status success",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chatbot_logs",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "failed_answer_ia",
+            "message_id": "={{ $('Normalize Evolution Payload').item.json.messageId }}",
+            "error_message": "={{$json.error.message}}"
+          },
+          "matchingColumns": [
+            "message_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "resposta_ia",
+              "displayName": "resposta_ia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "criado_em",
+              "displayName": "criado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2304,
+        128
+      ],
+      "id": "3351b266-870e-4be4-8213-2c4df66ff911",
+      "name": "Atualizar log status failed_answer_ia",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const resposta = $json.output.response || \"\";\n\nreturn [{\n  json: {\n    ...$json,\n    respostaValida: resposta.trim().length >= 3\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        -48
+      ],
+      "id": "8c1adc89-df6a-4f34-b0e7-525ab34ff56c",
+      "name": "Validar resposta IA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b579fdd7-f589-4623-a4ea-68bdacf5f605",
+              "leftValue": "={{$json.respostaValida}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2512,
+        -48
+      ],
+      "id": "c6dc084c-0bed-43c9-9db7-434ed877610b",
+      "name": "Verifica se resposta é válida"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json:{\n    ...$json,\n    tempo_resposta_ms: Date.now() - $json.startedAt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -48
+      ],
+      "id": "d56455de-f351-458f-89eb-acc02a10c7a0",
+      "name": "Calcular tempo resposta"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\nid,\nnumero,\nnome\n\nFROM allowed_numbers\n\nWHERE numero = $1\nAND ativo = true;",
+        "options": {
+          "queryReplacement": "={{$json.telefone}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        160,
+        0
+      ],
+      "id": "be88a2ac-4783-4be3-adde-b8efbe34adce",
+      "name": "Validar número autorizado",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "af42c710-0975-48d9-b67a-ddb7175af601",
+              "leftValue": "={{ $json }}",
+              "rightValue": "5511960995746",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d9cb91c7-457e-4b0f-a143-ef1e4929ed6e",
+              "leftValue": "={{ $('Normalize Evolution Payload').item.json.fromMe }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e15edcf7-3d93-4a5d-bb7b-2ae7c8e60614",
+              "leftValue": "={{ $('Normalize Evolution Payload').item.json.mensagem }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "3edcbfdb-16ec-4c95-920c-86bbb1aba9a6",
+      "name": "Validando número remetente1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"intent\": \"appointment\",\n  \"response\": \"...\",\n  \"appointment\": {\n    \"procedure\": \"Clareamento\",\n    \"date\": \"2026-07-25\",\n    \"time\": \"15:30\"\n  },\n  \"completed\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1840,
+        144
+      ],
+      "id": "61e506d1-8da2-4537-9eb2-840e6f6c0b40",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\nmensagem_usuario,\nresposta_ia\nFROM chatbot_logs\nWHERE telefone = $1\nORDER BY criado_em DESC\nLIMIT 5;",
+        "options": {
+          "queryReplacement": "={{$json.telefone}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1248,
+        -32
+      ],
+      "id": "c0ed483a-87d4-4590-a8d9-6b7c08d58f8e",
+      "name": "Obter contexto IA",
+      "credentials": {
+        "postgres": {
+          "id": "LFhWMylFo8bxZYyD",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const historico = $input.all();\n\nlet contexto = \"\";\n\nhistorico.reverse().forEach(item => {\n\ncontexto += `Usuário: ${item.json.mensagem_usuario}\\n`;\n\ncontexto += `Assistente: ${item.json.resposta_ia}\\n\\n`;\n\n});\n\nreturn [\n\n{\n\njson:{\n\n...$('Normalize Evolution Payload').first().json,\n\nconversation_history: contexto\n\n}\n\n}\n\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -32
+      ],
+      "id": "5a264d0e-1298-445c-bc2b-219a8a02ef81",
+      "name": "Construindo contexto da conversa"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      \n      intent: $input.first().json.output.intent || null,\n\n      response: $input.first().json.output.response || null,\n\n      procedure:\n        $input.first().json.output.appointment.procedure || null,\n\n      preferred_date:\n        $input.first().json.output.appointment.date || null,\n\n      preferred_time:\n        $input.first().json.output.appointment.time || null\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        -64
+      ],
+      "id": "67765992-9672-484b-b1e9-a66db6125453",
+      "name": "Filtrando Output IA"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recebendo mensagens whatsapp": {
+      "main": [
+        [
+          {
+            "node": "Normalize Evolution Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Resposta gerada pela IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Resposta gerada pela IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Evolution Payload": {
+      "main": [
+        [
+          {
+            "node": "Validar número autorizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta gerada pela IA": {
+      "main": [
+        [
+          {
+            "node": "Calcular tempo resposta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar log status failed_answer_ia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar resposta Evolution": {
+      "main": [
+        [
+          {
+            "node": "enviando mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar log de entrada": {
+      "main": [
+        [
+          {
+            "node": "Obter contexto IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica se mensagem já existe": {
+      "main": [
+        [
+          {
+            "node": "Verificando se mensagem já foi enviada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificando se mensagem já foi enviada": {
+      "main": [
+        [
+          {
+            "node": "Salvar log de entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar log status answer_ia_null": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de erro da resposta gerada pela IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "enviando mensagem": {
+      "main": [
+        [
+          {
+            "node": "Atualizar log status success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar log status send_failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar log status answered": {
+      "main": [
+        [
+          {
+            "node": "Preparar resposta Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar log status failed_answer_ia": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de erro ao gerar resposta da IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar resposta IA": {
+      "main": [
+        [
+          {
+            "node": "Verifica se resposta é válida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica se resposta é válida": {
+      "main": [
+        [
+          {
+            "node": "Filtrando Output IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar log status answer_ia_null",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular tempo resposta": {
+      "main": [
+        [
+          {
+            "node": "Validar resposta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar número autorizado": {
+      "main": [
+        [
+          {
+            "node": "Validando número remetente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validando número remetente1": {
+      "main": [
+        [
+          {
+            "node": "Verifica se mensagem já existe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Resposta gerada pela IA",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter contexto IA": {
+      "main": [
+        [
+          {
+            "node": "Construindo contexto da conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construindo contexto da conversa": {
+      "main": [
+        [
+          {
+            "node": "Resposta gerada pela IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrando Output IA": {
+      "main": [
+        [
+          {
+            "node": "Atualizar log status answered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "50afd28f-9f5f-4e8e-8ba0-25c6c893da15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca94c119a7ebce6d19d2d97952852037bed869f5ff1deddb091943eb7c8e1c1d"
+  },
+  "id": "xmgTmnjzJBcCyGLW",
+  "tags": []
+}
