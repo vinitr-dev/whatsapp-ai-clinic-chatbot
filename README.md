@@ -1,32 +1,28 @@
-WhatsApp AI Chatbot - Clínica Sorriso
+# WhatsApp AI Chatbot
 
-Automação desenvolvida utilizando:
+Projeto desenvolvido para demonstrar conhecimentos em automação, Inteligência Artificial e integrações utilizando n8n.
 
-n8n
-Evolution API
-Groq LLM
-PostgreSQL
-Redis Memory
-Docker
-Funcionalidades
+## Tecnologias
 
-✔ Atendimento via WhatsApp
+- n8n
+- Evolution API
+- Groq
+- PostgreSQL
+- Redis
+- Docker
 
-✔ Memória de Conversa
+## Funcionalidades
 
-✔ Coleta de dados para agendamento
+- Atendimento automatizado via WhatsApp
+- Memória de conversa utilizando Redis
+- Registro completo de logs em PostgreSQL
+- Tratamento de erros
+- Controle de usuários autorizados
+- Output estruturado em JSON
+- Pré-triagem para agendamento de consultas
 
-✔ Tratamento de erros
+## Fluxo
 
-✔ Logs em PostgreSQL
-
-✔ Output estruturado (JSON)
-
-✔ Controle de usuários autorizados
-
-✔ Integração com Evolution API
-
-Arquitetura
 WhatsApp
 
 ↓
@@ -39,11 +35,11 @@ Webhook (n8n)
 
 ↓
 
-Validação
+Validação do usuário
 
 ↓
 
-IA (Groq)
+Groq (IA)
 
 ↓
 
@@ -51,7 +47,7 @@ Output Parser
 
 ↓
 
-Banco PostgreSQL
+PostgreSQL
 
 ↓
 
@@ -60,19 +56,16 @@ Evolution API
 ↓
 
 WhatsApp
-Tecnologias
-n8n
-Evolution API
-Docker
-PostgreSQL
-Redis
-Groq
-Funcionalidades implementadas
-Atendimento automatizado
-Memória Redis
-Persistência em banco
-Tratamento de exceções
-Controle de números autorizados
-Registro de logs
-Tempo de resposta
-Estrutura pronta para produção
+
+## Recursos implementados
+
+- Estrutura preparada para produção
+- Logs completos
+- Persistência de memória
+- Tratamento de exceções
+- Respostas estruturadas
+- Integração entre múltiplos serviços
+
+## Observações
+
+Por questões de segurança, credenciais e chaves de API não foram incluídas neste repositório.
